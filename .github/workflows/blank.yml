@@ -1,9 +1,7 @@
 name: Create Docker Offline Package
 
 on:
-  workflow_dispatch:  # 手动触发
-  schedule:           # 定期触发（可选）
-    - cron: "0 0 * * *"
+  workflow_dispatch:
 
 jobs:
   build-docker-offline-package:
@@ -24,12 +22,12 @@ jobs:
       - name: Generate apt-offline request file
         run: |
           mkdir -p apt-offline-request
-          sudo apt-offline set ./apt-offline-request/docker-install.sig
+          sudo apt-offline set ./apt-offline-request/docker-install.sig \
+              --install-packages docker-ce docker-ce-cli containerd.io
 
       # 4. 下载 Docker 相关包（包括依赖）
       - name: Download Docker Packages
         run: |
-          sudo apt-get update
           sudo apt-offline get ./apt-offline-request/docker-install.sig \
               --threads 4 \
               --bundle ./docker-packages.zip
