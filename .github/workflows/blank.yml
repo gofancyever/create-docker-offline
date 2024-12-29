@@ -1,0 +1,42 @@
+name: Create Docker Offline Package
+
+on:
+  workflow_dispatch:  # 手动触发
+  schedule:           # 定期触发（可选）
+    - cron: "0 0 * * *"
+
+jobs:
+  build-docker-offline-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 检出代码仓库
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # 2. 安装必要的工具
+      - name: Install apt-offline and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apt-offline tar
+
+      # 3. 初始化 apt-offline 请求文件
+      - name: Generate apt-offline request file
+        run: |
+          mkdir -p apt-offline-request
+          sudo apt-offline set ./apt-offline-request/docker-install.sig
+
+      # 4. 下载 Docker 相关包（包括依赖）
+      - name: Download Docker Packages
+        run: |
+          sudo apt-get update
+          sudo apt-offline get ./apt-offline-request/docker-install.sig \
+              --threads 4 \
+              --bundle ./docker-packages.zip
+
+      # 5. 上传生成的离线包作为 Artifact
+      - name: Upload Docker Offline Package
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-offline-package
+          path: ./docker-packages.zip
